@@ -4,13 +4,30 @@
 main :: () {
     stat_struct : stat_t;
     stat(to_c_string("stat.jai"), *stat_struct);
-    print("%\n", stat_struct);
+    // print("%\n", stat_struct);
 
     using stat_struct;
-    print("File: %\n", "stat.jai");
-    print("Size: %\tBlocks: %\tIO Block: %\t%\n", st_size, st_blocks, st_blksize, GetFileTypeFromMode(st_mode));
-    print("Device: %\tInode: %\tLinks: %\n", st_dev, st_ino, st_nlink);
-    print("Access: (%/%)\tUid: (%/%)\tGid: (%/%)\n", st_dev, GetAccessString(st_mode), st_uid, "grant", st_gid, "grant");
+
+    builder : String_Builder;
+    init_string_builder(*builder);
+    
+    print_to_builder(*builder, "File: %\n", "stat.jai");
+    write_builder(*builder);
+
+    print_to_builder(*builder, "Size: %\t", st_size);
+    print_to_builder(*builder, "Blocks: %\t", st_blocks);
+    print_to_builder(*builder, "IO Block: %\t%\n", st_blksize, GetFileTypeFromMode(st_mode));
+    write_builder(*builder);
+
+    print_to_builder(*builder, "Device: %\t", st_dev);
+    print_to_builder(*builder, "Inode: %\t", st_ino);
+    print_to_builder(*builder, "Links: %\n", st_nlink);
+    write_builder(*builder);
+
+    print_to_builder(*builder, "Access: (%/%)\t", GetAccessString(st_mode), st_uid);
+    print_to_builder(*builder, "Uid: (%/%)\t", "st_uid", "grant");
+    print_to_builder(*builder, "Gid: (%/%)\n", "st_gid", "grant");
+    write_builder(*builder);
 }
 
 GetFileTypeFromMode :: (st_mode : u32) -> type_name : string {
