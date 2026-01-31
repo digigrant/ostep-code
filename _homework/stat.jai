@@ -1,6 +1,8 @@
 #import "POSIX";
 #import "Basic";
 
+TIME_BUFFER_SIZE :: 256;
+
 main :: () {
     stat_struct : stat_t;
     stat(to_c_string("stat.jai"), *stat_struct);
@@ -10,23 +12,29 @@ main :: () {
 
     builder : String_Builder;
     init_string_builder(*builder);
+
+    time_buffer : string = ---;
+    time_buffer.count = TIME_BUFFER_SIZE;
+    time_buffer.data = talloc(TIME_BUFFER_SIZE);
     
     print_to_builder(*builder, "File: %\n", "stat.jai");
-    write_builder(*builder);
 
     print_to_builder(*builder, "Size: %\t", st_size);
     print_to_builder(*builder, "Blocks: %\t", st_blocks);
     print_to_builder(*builder, "IO Block: %\t%\n", st_blksize, GetFileTypeFromMode(st_mode));
-    write_builder(*builder);
 
     print_to_builder(*builder, "Device: %\t", st_dev);
     print_to_builder(*builder, "Inode: %\t", st_ino);
     print_to_builder(*builder, "Links: %\n", st_nlink);
-    write_builder(*builder);
 
-    print_to_builder(*builder, "Access: (%/%)\t", GetAccessString(st_mode), st_uid);
-    print_to_builder(*builder, "Uid: (%/%)\t", "st_uid", "grant");
-    print_to_builder(*builder, "Gid: (%/%)\n", "st_gid", "grant");
+    print_to_builder(*builder, "Access: (%/%)\t", st_uid, GetAccessString(st_mode));
+    print_to_builder(*builder, "Uid: (%/%)\t", st_uid, "grant");
+    print_to_builder(*builder, "Gid: (%/%)\n", st_gid, "grant");
+
+    print_to_builder(*builder, "Access: %\n", FormatTime(*st_atime, *time_buffer));
+    print_to_builder(*builder, "Modify: %\n", FormatTime(*st_mtime, *time_buffer));
+    print_to_builder(*builder, "Change: %\n", FormatTime(*st_ctime, *time_buffer));
+    print_to_builder(*builder, "Birth: %\n", FormatTime(*st_atime, *time_buffer));
     write_builder(*builder);
 }
 
@@ -68,4 +76,15 @@ GetAccessString :: (st_mode : u32) -> access : string {
     access_string.data[9] = xx ifx st_mode & S_IXOTH then #char "x" else #char "-";
 
     return access_string;
+}
+
+FormatTime :: (time : *timespec, buffer : *string) -> formatted_time : string {
+    TIME_BUFFER_FORMAT :: "%Y-%m-%d %H:%M:%S";
+    local_time := localtime(*(time.tv_sec));
+    buffer.count = xx strftime(buffer.data, TIME_BUFFER_SIZE, to_c_string(TIME_BUFFER_FORMAT), local_time);
+    
+    builder : String_Builder;
+    print_to_builder(*builder, "%.%", buffer.*, time.tv_nsec);
+
+    return builder_to_string(*builder);
 }
