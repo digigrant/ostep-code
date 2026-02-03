@@ -1,4 +1,5 @@
 #import "POSIX";
+#import "POSIX_Extra";
 #import "Basic";
 #import "String";
 
@@ -39,7 +40,13 @@ AssembleFileList :: (filenames : [] string, is_verbose : bool) -> string {
     for filenames {
         if is_verbose {
             stat(to_c_string(it), *stat_struct);
-            print_to_builder(*builder, "%\t", stat_struct.st_dev);
+            using stat_struct;
+            print_to_builder(*builder, "% ", GetAccessString(st_mode));
+            print_to_builder(*builder, "% ", st_nlink);
+            print_to_builder(*builder, "% ", "grant");
+            print_to_builder(*builder, "% ", "grant");
+            print_to_builder(*builder, "% ", st_size);
+            print_to_builder(*builder, "% ", FormatTime(*st_mtime, "%m-%d %H:%M"));
         }
         print_to_builder(*builder, "%\n", it);
     }
